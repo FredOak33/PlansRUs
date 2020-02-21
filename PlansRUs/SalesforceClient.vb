@@ -96,4 +96,16 @@ Public Class SalesforceClient
             Return response.Content.ReadAsStringAsync().Result
         End Using
     End Function
+
+    Public Function Query2(ByVal soqlQuery As String) As String
+        Using client = New HttpClient()
+            Dim restRequest As String = InstanceUrl & soqlQuery
+            Dim request = New HttpRequestMessage(HttpMethod.[Get], restRequest)
+            request.Headers.Add("Authorization", "Bearer " & AuthToken)
+            request.Headers.Accept.Add(New MediaTypeWithQualityHeaderValue("application/json"))
+            request.Headers.Add("X-PrettyPrint", "1")
+            Dim response = client.SendAsync(request).Result
+            Return response.Content.ReadAsStringAsync().Result
+        End Using
+    End Function
 End Class

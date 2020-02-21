@@ -361,19 +361,61 @@ Public Class FrmMain
         LoadPlans(CurrentPlan)
 
     End Sub
+    Public Sub CleanUpKeyFile()
+        Dim delLine As Integer = 26004
+        Dim linesList As New List(Of String)(System.IO.File.ReadAllLines("S:\Corp\CIS\BCD-DR\FRED\KeyJSON.txt"))
+
+        linesList(delLine) = "  }, {"
+        System.IO.File.WriteAllLines("S:\Corp\CIS\BCD-DR\FRED\KeyJSON.txt", linesList)
+
+        For i = 0 To 4
+            delLine = 26005
+            linesList.RemoveAt(delLine) ' index starts at 0 
+            System.IO.File.WriteAllLines("S:\Corp\CIS\BCD-DR\FRED\KeyJSON.txt", linesList)
+        Next
+
+    End Sub
+
+
+    Function ReadLineWithNumberFrom(filePath As String, ByVal lineNumber As Integer) As String
+        Using file As New StreamReader(filePath)
+            ' Skip all preceding lines: '
+            For i As Integer = 1 To lineNumber - 1
+                If file.ReadLine() Is Nothing Then
+                    Throw New ArgumentOutOfRangeException("lineNumber")
+                End If
+            Next
+            ' Attempt to read the line you're interested in: '
+            Dim line As String = file.ReadLine()
+            If line Is Nothing Then
+                Throw New ArgumentOutOfRangeException("lineNumber")
+            End If
+            line = Microsoft.VisualBasic.Mid(line, 23, 50)
+            ' Succeded!
+            Return line
+        End Using
+    End Function
 
     Private Sub KeyFile()
         Dim client = CreateClient()
         client.Login()
         '=====================================================================================================================
         'Process query for basic User information to compare
-        System.IO.File.WriteAllText("S:\Corp\CIS\BCD-DR\FRED\KeyPlanJSON.txt", "")
-        Using file As System.IO.StreamWriter = New System.IO.StreamWriter("S:\Corp\CIS\BCD-DR\FRED\KeyPlanJSON.txt", True)
+        System.IO.File.WriteAllText("S:\Corp\CIS\BCD-DR\FRED\KeyJSON.txt", "")
 
+        Using SW1 As System.IO.StreamWriter = New System.IO.StreamWriter("S:\Corp\CIS\BCD-DR\FRED\KeyJSON.txt", True)
             If True Then
-                file.WriteLine(client.Query("SELECT Id,	Name, FF__Full_Name__c,	FF__Last_Name__c, FF__Title__c,	FF__Number_of_Rosters__c, FF__Number_of_Teams__c from FF__Key_Contact__c"))
+                SW1.WriteLine(client.Query("SELECT Name, YID__c, Status__c,Cost_Center__c,Level_1_Supervisor_ID__c,Cost_Center_Name__c,Level_1_Supervisor_Name__c,ID from FF__Key_Contact__c WHERE Status__c = 'Active'"))
             End If
         End Using
+
+        Dim Q2 As String = ReadLineWithNumberFrom("S:\Corp\CIS\BCD-DR\FRED\KeyJSON.txt", 4)
+
+        Using SW2 As System.IO.StreamWriter = File.AppendText("S:\Corp\CIS\BCD-DR\FRED\KeyJSON.txt")
+            SW2.WriteLine(client.Query2(Q2))
+        End Using
+
+        CleanUpKeyFile()
 
     End Sub
 
